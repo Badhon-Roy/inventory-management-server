@@ -98,6 +98,19 @@ async function run() {
       const result = await productCollection.insertOne(product)
       res.send(result)
     })
+    app.patch('/products/:id' , async(req , res)=>{
+      const id = req.params.id
+      const product = req.body;
+      const filter = { _id : new ObjectId(id)};
+      const options = { upsert: true };
+      const updateDoc = {
+        $set: {
+          ...product
+        },
+      };
+      const result = await productCollection.updateOne(filter, updateDoc, options);
+      res.send(result)
+    })
     app.delete('/products/:id', async(req, res) => {
       const id = req.params.id;
       const query = { _id : new ObjectId(id) };
