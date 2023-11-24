@@ -1,8 +1,9 @@
 const express = require('express')
 const app = express()
+require('dotenv').config();
 const { MongoClient, ServerApiVersion } = require('mongodb');
 const cors = require('cors')
-const port = process.env.PORT || 5000 ;
+const port = process.env.PORT || 5000;
 
 
 // middleware
@@ -25,7 +26,27 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
-    
+    const shopCollection = client.db("inventoryDB").collection("shops");
+    const userCollection = client.db("inventoryDB").collection("users");
+
+
+    // user related api
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      const query = { email: user?.email }
+      const existingUser = await userCollection.findOne(query)
+      if (existingUser) {
+        return res.send({ massage: "user already exists" })
+      }
+      const result = await userCollection.insertOne(user)
+      res.send(result)
+    })
+
+    app.post('/shops', async (req, res) => {
+      const shop = req.body;
+      const result = await shopCollection.insertOne(shop);
+      res.send(result)
+    })
 
 
 
