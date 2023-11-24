@@ -1,7 +1,7 @@
 const express = require('express')
 const app = express()
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors')
 const port = process.env.PORT || 5000;
 
@@ -67,8 +67,8 @@ async function run() {
     })
 
     app.patch('/users/manager/:email', async (req, res) => {
-      const email = req.params.email ;
-      const filter = {email : email };
+      const email = req.params.email;
+      const filter = { email: email };
       const updatedDoc = {
         $set: {
           role: 'manager'
@@ -79,7 +79,7 @@ async function run() {
     })
 
     // product related api
-    app.get('/products', async(req , res)=>{
+    app.get('/products', async (req, res) => {
       let query = {};
       if (req?.query?.email) {
         query = { email: req?.query?.email }
@@ -87,14 +87,34 @@ async function run() {
       const result = await productCollection.find(query).toArray();
       res.send(result)
     })
-    app.post('/products', async(req , res)=>{
+    app.get('/products/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await productCollection.findOne(query);
+      res.send(result)
+    })
+    app.post('/products', async (req, res) => {
       const product = req.body;
       const result = await productCollection.insertOne(product)
+      res.send(result)
+    })
+    app.delete('/products/:id', async(req, res) => {
+      const id = req.params.id;
+      const query = { _id : new ObjectId(id) };
+      const result = await productCollection.deleteOne(query);
       res.send(result)
     })
 
 
     // shops related api
+    app.get('/shops', async (req, res) => {
+      let query = {};
+      if (req?.query?.shop_owner_email) {
+        query = { shop_owner_email: req?.query?.shop_owner_email }
+      }
+      const result = await shopCollection.findOne(query);
+      res.send(result)
+    })
     app.post('/shops', async (req, res) => {
       const shop = req.body;
       const result = await shopCollection.insertOne(shop);
