@@ -54,6 +54,30 @@ async function run() {
     })
 
 
+    app.get('/users/manager/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query)
+      let manager = false;
+      if (user) {
+        manager = user?.role === 'manager';
+      }
+      res.send({ manager })
+    })
+
+    app.patch('/users/manager/:email', async (req, res) => {
+      const email = req.params.email ;
+      const filter = {email : email };
+      const updatedDoc = {
+        $set: {
+          role: 'manager'
+        }
+      }
+      const result = await userCollection.updateOne(filter, updatedDoc);
+      res.send(result);
+    })
+
+
     // shops related api
     app.post('/shops', async (req, res) => {
       const shop = req.body;
