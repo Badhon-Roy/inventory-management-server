@@ -28,6 +28,7 @@ async function run() {
     await client.connect();
     const shopCollection = client.db("inventoryDB").collection("shops");
     const userCollection = client.db("inventoryDB").collection("users");
+    const productCollection = client.db("inventoryDB").collection("products");
 
 
     // user related api
@@ -75,6 +76,21 @@ async function run() {
       }
       const result = await userCollection.updateOne(filter, updatedDoc);
       res.send(result);
+    })
+
+    // product related api
+    app.get('/products', async(req , res)=>{
+      let query = {};
+      if (req?.query?.email) {
+        query = { email: req?.query?.email }
+      }
+      const result = await productCollection.find(query).toArray();
+      res.send(result)
+    })
+    app.post('/products', async(req , res)=>{
+      const product = req.body;
+      const result = await productCollection.insertOne(product)
+      res.send(result)
     })
 
 
