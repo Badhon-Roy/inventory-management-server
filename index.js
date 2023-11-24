@@ -42,6 +42,19 @@ async function run() {
       res.send(result)
     })
 
+    app.get('/users/admin/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query)
+      let admin = false;
+      if (user) {
+        admin = user?.role === 'admin';
+      }
+      res.send({ admin })
+    })
+
+
+    // shops related api
     app.post('/shops', async (req, res) => {
       const shop = req.body;
       const result = await shopCollection.insertOne(shop);
