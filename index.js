@@ -29,6 +29,8 @@ async function run() {
     const shopCollection = client.db("inventoryDB").collection("shops");
     const userCollection = client.db("inventoryDB").collection("users");
     const productCollection = client.db("inventoryDB").collection("products");
+    const salesCollection = client.db("inventoryDB").collection("sales");
+    const offersCollection = client.db("inventoryDB").collection("offers");
 
 
     // user related api
@@ -98,10 +100,10 @@ async function run() {
       const result = await productCollection.insertOne(product)
       res.send(result)
     })
-    app.patch('/products/:id' , async(req , res)=>{
+    app.patch('/products/:id', async (req, res) => {
       const id = req.params.id
       const product = req.body;
-      const filter = { _id : new ObjectId(id)};
+      const filter = { _id: new ObjectId(id) };
       const options = { upsert: true };
       const updateDoc = {
         $set: {
@@ -111,9 +113,9 @@ async function run() {
       const result = await productCollection.updateOne(filter, updateDoc, options);
       res.send(result)
     })
-    app.delete('/products/:id', async(req, res) => {
+    app.delete('/products/:id', async (req, res) => {
       const id = req.params.id;
-      const query = { _id : new ObjectId(id) };
+      const query = { _id: new ObjectId(id) };
       const result = await productCollection.deleteOne(query);
       res.send(result)
     })
@@ -133,6 +135,39 @@ async function run() {
       const result = await shopCollection.insertOne(shop);
       res.send(result)
     })
+
+
+    // sales product related api
+    app.post("/sales", async (req, res) => {
+      const product = req.body;
+      const result = await salesCollection.insertOne(product)
+      res.send(result)
+    })
+
+
+    // increment 
+    app.put('/products/:id/increment', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await productCollection.updateOne(
+        query,
+        { $inc: { sale_count: 1 } },
+        { new: true }
+      );
+      res.json(result);
+    });
+
+    // decrement 
+    app.put('/products/:id/decrement', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await productCollection.updateOne(
+        query,
+        { $inc: { quantity: -1 } },
+        { new: true }
+      );
+      res.json(result);
+    });
 
 
 
