@@ -170,6 +170,20 @@ async function run() {
     });
 
 
+    // offers related api
+    app.get('/offers', async(req , res)=>{
+      const offer = req.body;
+      const result = await offersCollection.find(offer).toArray()
+      res.send(result)
+    })
+    app.get('/offers/:id', async(req , res)=>{
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) }
+      const result = await offersCollection.findOne(query);
+      res.send(result)
+    })
+
+
 
 
 
