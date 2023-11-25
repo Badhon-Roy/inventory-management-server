@@ -3,6 +3,7 @@ const app = express()
 require('dotenv').config();
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require('cors')
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000;
 
 
@@ -31,6 +32,7 @@ async function run() {
     const productCollection = client.db("inventoryDB").collection("products");
     const salesCollection = client.db("inventoryDB").collection("sales");
     const offersCollection = client.db("inventoryDB").collection("offers");
+    const checkOutCollection = client.db("inventoryDB").collection("checkOuts");
 
 
     // user related api
@@ -78,6 +80,23 @@ async function run() {
       }
       const result = await userCollection.updateOne(filter, updatedDoc);
       res.send(result);
+    })
+
+    // checkOut related api
+    app.get('/checkOut', async (req, res) => {
+      const result = await checkOutCollection.find().toArray()
+      res.send(result)
+    })
+    app.post('/checkOut', async (req, res) => {
+      const product = req.body;
+      const result = await checkOutCollection.insertOne(product)
+      res.send(result)
+    })
+    app.delete('/checkOut/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const result = await checkOutCollection.deleteOne(filter)
+      res.send(result)
     })
 
     // product related api
@@ -135,6 +154,20 @@ async function run() {
       const result = await shopCollection.insertOne(shop);
       res.send(result)
     })
+    // increment 
+    app.put('/shops/:id/increment', async (req, res) => {
+      const { limit } = req.query;
+      const offerLimit = parseInt(limit)
+      console.log(offerLimit);
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await shopCollection.updateOne(
+        query,
+        { $inc: { product_limit: offerLimit } },
+        { new: true }
+      );
+      res.json(result);
+    });
 
 
     // sales product related api
@@ -171,16 +204,33 @@ async function run() {
 
 
     // offers related api
-    app.get('/offers', async(req , res)=>{
-      const offer = req.body;
-      const result = await offersCollection.find(offer).toArray()
+    app.get('/offers', async (req, res) => {
+      const result = await offersCollection.find().toArray()
       res.send(result)
     })
-    app.get('/offers/:id', async(req , res)=>{
+    app.get('/offers/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) }
       const result = await offersCollection.findOne(query);
       res.send(result)
+    })
+
+
+    // payment intent
+    app.post("/create-payment-intent", async (req, res) => {
+      const { pay } = req.body;
+      console.log(pay);
+      const amount = parseInt(pay * 100)
+      console.log("amount", amount);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ['card']
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+
     })
 
 
