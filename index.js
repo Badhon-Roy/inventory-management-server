@@ -146,6 +146,10 @@ async function run() {
 
     // shops related api
     app.get('/shops', async (req, res) => {
+      const result = await shopCollection.find().toArray();
+      res.send(result)
+    })
+    app.get('/shops', async (req, res) => {
       let query = {};
       if (req?.query?.shop_owner_email) {
         query = { shop_owner_email: req?.query?.shop_owner_email }
