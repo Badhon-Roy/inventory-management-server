@@ -84,7 +84,11 @@ async function run() {
 
     // checkOut related api
     app.get('/checkOut', async (req, res) => {
-      const result = await checkOutCollection.find().toArray()
+      let query = {};
+      if (req?.query?.email) {
+        query = { email: req?.query?.email }
+      }
+      const result = await checkOutCollection.find(query).toArray();
       res.send(result)
     })
     app.post('/checkOut', async (req, res) => {
@@ -149,6 +153,7 @@ async function run() {
       const result = await shopCollection.findOne(query);
       res.send(result)
     })
+    
     app.post('/shops', async (req, res) => {
       const shop = req.body;
       const result = await shopCollection.insertOne(shop);
@@ -171,6 +176,14 @@ async function run() {
 
 
     // sales product related api
+    app.get('/sales', async (req, res) => {
+      let query = {};
+      if (req?.query?.email) {
+        query = { email: req?.query?.email }
+      }
+      const result = await salesCollection.find(query).toArray();
+      res.send(result)
+    })
     app.post("/sales", async (req, res) => {
       const product = req.body;
       const result = await salesCollection.insertOne(product)
