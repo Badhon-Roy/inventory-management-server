@@ -74,6 +74,16 @@ async function run() {
       }
       next();
     }
+    const verifyManager = async (req, res, next) => {
+      const email = req.decoded?.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const isManager = user?.role === 'manager';
+      if(!isManager){
+        return res.status(403).send({massage : 'forbidden access'})
+      }
+      next();
+    }
 
 
     // user related api
@@ -92,11 +102,11 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/users/admin/:email' , async (req, res) => {
+    app.get('/users/admin/:email', verifyToken , async (req, res) => {
       const email = req.params.email;
-      // if (email !== req.decoded.email) {
-      //   return res.status(403).send({ message: 'forbidden access' })
-      // }
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       const query = { email: email };
       const user = await userCollection.findOne(query)
       let admin = false;
@@ -193,16 +203,13 @@ async function run() {
 
 
     // shops related api
-    app.get('/shops', async (req, res) => {
-      const result = await shopCollection.find().toArray();
-      res.send(result)
-    })
+
     app.get('/shops', async (req, res) => {
       let query = {};
       if (req?.query?.shop_owner_email) {
         query = { shop_owner_email: req?.query?.shop_owner_email }
       }
-      const result = await shopCollection.findOne(query);
+      const result = await shopCollection.find(query).toArray();
       res.send(result)
     })
 
