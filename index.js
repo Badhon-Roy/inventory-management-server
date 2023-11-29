@@ -28,7 +28,8 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
+
     const shopCollection = client.db("inventoryDB").collection("shops");
     const userCollection = client.db("inventoryDB").collection("users");
     const productCollection = client.db("inventoryDB").collection("products");
@@ -44,33 +45,35 @@ async function run() {
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
       res.send({ token })
     })
+
+
     const verifyToken = (req, res, next) => {
       console.log('verify token', req.headers?.authorization);
       if (!req.headers?.authorization) {
-        return res.status(401).send({ massage: 'unauthorized access' })
+        return res.status(401).send({ massage: ' a unauthorized access' })
       }
       const token = req.headers.authorization.split(' ')[1];
       if (!token) {
-        return res.status(401).send({ massage: 'unauthorized access' })
+        return res.status(401).send({ massage: 'b unauthorized access' })
       }
       jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
-          return res.status(401).send({ massage: 'unauthorized access' })
+          return res.status(401).send({ massage: 'c unauthorized access' })
         }
         req.decoded = decoded;
         next()
       });
     }
-    
-    
-    
+
+
+
     const verifyAdmin = async (req, res, next) => {
       const email = req.decoded?.email;
       const query = { email: email };
       const user = await userCollection.findOne(query);
       const isAdmin = user?.role === 'admin';
-      if(!isAdmin){
-        return res.status(403).send({massage : 'forbidden access'})
+      if (!isAdmin) {
+        return res.status(403).send({ massage: 'admin forbidden access' })
       }
       next();
     }
@@ -79,15 +82,15 @@ async function run() {
       const query = { email: email };
       const user = await userCollection.findOne(query);
       const isManager = user?.role === 'manager';
-      if(!isManager){
-        return res.status(403).send({massage : 'forbidden access'})
+      if (!isManager) {
+        return res.status(403).send({ massage: 'manager forbidden access' })
       }
       next();
     }
 
 
     // user related api
-    app.get('/users', verifyToken, verifyAdmin , async (req, res) => {
+    app.get('/users', async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result)
     })
@@ -102,7 +105,7 @@ async function run() {
       res.send(result)
     })
 
-    app.get('/users/admin/:email', verifyToken , async (req, res) => {
+    app.get('/users/admin/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
       if (email !== req.decoded.email) {
         return res.status(403).send({ message: 'forbidden access' })
@@ -117,8 +120,11 @@ async function run() {
     })
 
 
-    app.get('/users/manager/:email', async (req, res) => {
+    app.get('/users/manager/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       const query = { email: email };
       const user = await userCollection.findOne(query)
       let manager = false;
@@ -127,6 +133,15 @@ async function run() {
       }
       res.send({ manager })
     })
+    // increment admin income
+    app.put('/users/:email/increment', async (req, res) => {
+      const { income } = req.query;
+      const adminIncome = parseFloat(income)
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await userCollection.updateOne(query, { $inc: { income : adminIncome } })
+      res.send(result)
+    });
 
     app.patch('/users/manager/:email', async (req, res) => {
       const email = req.params.email;
@@ -143,6 +158,9 @@ async function run() {
     // checkOut related api
     app.get('/checkOut', async (req, res) => {
       let query = {};
+      if (req?.query?.email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
       if (req?.query?.email) {
         query = { email: req?.query?.email }
       }
@@ -221,8 +239,8 @@ async function run() {
     // increment 
     app.put('/shops/:id/increment', async (req, res) => {
       const { limit } = req.query;
+      console.log('limit', limit);
       const offerLimit = parseInt(limit)
-      console.log(offerLimit);
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await shopCollection.updateOne(
